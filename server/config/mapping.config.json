@@ -1,0 +1,49 @@
+{
+  "sheet": "Planning",
+  "agentNameColumn": "B",
+  "agentStartRow": 57,
+  "hourHeaderRow": 56,
+  "dayStartColumn": "PB",
+  "dayEndColumn": "PY",
+  "palette": {
+    "sites": {
+      "range": "K2:K6",
+      "values": {
+        "K2": "WD Spinelli",
+        "K3": "WD Kohl",
+        "K4": "WD Martens",
+        "K5": "WD LUX/STR",
+        "K6": "Serv. phone"
+      }
+    },
+    "status": {
+      "range": "F2:F6",
+      "values": {
+        "F2": "Present",
+        "F3": "Telework",
+        "F4": "Mission",
+        "F5": "Travel",
+        "F6": "Int. training"
+      }
+    }
+  },
+  "timeWindow": {
+    "start": "08:00",
+    "end": "20:00"
+  },
+  "standardShift": {
+    "workHours": 8,
+    "breakHours": 1,
+    "totalPresence": 9,
+    "defaultBreaks": [
+      { "start": "12:00", "end": "13:00" },
+      { "start": "13:00", "end": "14:00" }
+    ],
+    "templates": [
+      { "start": "08:00", "end": "17:00" },
+      { "start": "08:30", "end": "17:30" },
+      { "start": "09:00", "end": "18:00" },
+      { "start": "09:30", "end": "18:30" }
+    ]
+  }
+}

@@ -1,0 +1,95 @@
+.planning-grid-container {
+  overflow-x: auto;
+  background: var(--surface-color);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+}
+
+.planning-grid-wrapper {
+  min-width: 100%;
+}
+
+.planning-grid {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.planning-grid th,
+.planning-grid td {
+  padding: 0.75rem;
+  text-align: left;
+  border: 1px solid var(--border-color);
+}
+
+.planning-grid thead th {
+  background: var(--bg-color);
+  font-weight: 600;
+  color: var(--text-primary);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.sticky-col {
+  position: sticky;
+  left: 0;
+  background: var(--surface-color);
+  z-index: 5;
+  font-weight: 500;
+}
+
+.sticky-col.agent-name {
+  min-width: 150px;
+  max-width: 200px;
+}
+
+.day-header {
+  min-width: 100px;
+  text-align: center;
+}
+
+.day-cell {
+  min-width: 100px;
+  height: 60px;
+  position: relative;
+  cursor: default;
+}
+
+.day-cell.editable {
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.day-cell.editable:hover {
+  opacity: 0.8;
+  box-shadow: inset 0 0 0 2px var(--primary-color);
+}
+
+.cell-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  font-size: 0.875rem;
+}
+
+@media (max-width: 768px) {
+  .planning-grid {
+    font-size: 0.75rem;
+  }
+
+  .planning-grid th,
+  .planning-grid td {
+    padding: 0.5rem;
+  }
+
+  .sticky-col.agent-name {
+    min-width: 120px;
+  }
+
+  .day-header,
+  .day-cell {
+    min-width: 80px;
+  }
+}
