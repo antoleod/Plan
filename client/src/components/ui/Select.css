@@ -1,0 +1,22 @@
+.ui-select {
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  background: #fff;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  transition: border-color 0.2s ease;
+}
+
+.ui-select:focus {
+  outline: none;
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 2px rgba(12, 165, 176, 0.2);
+}
+
+.ui-select--sm {
+  padding: 0.35rem 0.8rem;
+}
+
+.ui-select--md {
+  padding: 0.55rem 0.9rem;
+}

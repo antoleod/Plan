@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 const modalOverlayStyle = {
   position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
@@ -10,6 +10,17 @@ const modalContentStyle = {
 };
 
 const OverrideModal = ({ warnings, onConfirm, onCancel }) => {
+  const [reason, setReason] = useState('');
+  const [error, setError] = useState('');
+
+  const handleConfirm = () => {
+    if (!reason.trim()) {
+      setError('A justification is required to override rules.');
+      return;
+    }
+    onConfirm(reason);
+  };
+
   return (
     <div style={modalOverlayStyle}>
       <div style={modalContentStyle}>
@@ -18,11 +29,24 @@ const OverrideModal = ({ warnings, onConfirm, onCancel }) => {
         <ul style={{ background: '#fffbe6', border: '1px solid #ffe58f', padding: '10px 20px', borderRadius: '4px' }}>
           {warnings.map((w, i) => <li key={i} style={{ color: '#d48806' }}>{w}</li>)}
         </ul>
-        <p>Do you want to force this assignment anyway?</p>
+        
+        <div style={{ marginTop: '15px' }}>
+          <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', fontSize: '0.9em' }}>
+            Justification for Override (Required):
+          </label>
+          <textarea
+            value={reason}
+            onChange={(e) => { setReason(e.target.value); setError(''); }}
+            placeholder="e.g., Authorized by HR due to emergency..."
+            style={{ width: '100%', padding: '8px', borderRadius: '4px', border: error ? '1px solid red' : '1px solid #ccc', minHeight: '60px' }}
+          />
+          {error && <p style={{ color: 'red', fontSize: '0.8em', marginTop: '4px' }}>{error}</p>}
+        </div>
+
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '20px' }}>
           <button onClick={onCancel} style={{ padding: '8px 16px', cursor: 'pointer' }}>Cancel</button>
           <button 
-            onClick={onConfirm} 
+            onClick={handleConfirm} 
             style={{ padding: '8px 16px', background: '#ff4d4f', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
           >
             Force Override

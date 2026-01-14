@@ -1,0 +1,49 @@
+.returns-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 1rem;
+}
+
+.return-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.9rem 1rem;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-color);
+}
+
+.return-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent-color);
+  color: #fff;
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.return-details {
+  flex: 1;
+}
+
+.return-name {
+  margin: 0;
+  font-weight: 600;
+  color: var(--navy-color);
+}
+
+.return-meta {
+  margin: 2px 0;
+  font-size: 0.8rem;
+  color: var(--muted-color);
+}
+
+.returns-empty {
+  color: var(--muted-color);
+  font-size: 0.85rem;
+}

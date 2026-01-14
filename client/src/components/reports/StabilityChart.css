@@ -1,0 +1,57 @@
+.stability-chart {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+}
+
+.stability-ring {
+  position: relative;
+  width: 140px;
+  height: 140px;
+}
+
+.stability-ring svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.stability-track,
+.stability-progress {
+  fill: none;
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+.stability-track {
+  stroke: #e5e7eb;
+}
+
+.stability-progress {
+  stroke: var(--accent-color);
+}
+
+.stability-score {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  color: var(--navy-color);
+  font-size: 1.2rem;
+}
+
+.stability-score small {
+  font-size: 0.7rem;
+  color: var(--muted-color);
+}
+
+.stability-meta {
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--muted-color);
+}

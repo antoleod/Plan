@@ -1,0 +1,43 @@
+.absence-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding-top: 0.5rem;
+}
+
+.absence-row {
+  display: grid;
+  grid-template-columns: 90px 1fr 30px;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.absence-label {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.absence-bar {
+  background: rgba(4, 27, 52, 0.08);
+  border-radius: 999px;
+  height: 12px;
+  overflow: hidden;
+}
+
+.absence-fill {
+  display: block;
+  height: 100%;
+  background: var(--accent-color);
+  border-radius: inherit;
+}
+
+.absence-value {
+  font-weight: 600;
+  color: var(--navy-color);
+  font-size: 0.85rem;
+}
+
+.absence-empty {
+  color: var(--muted-color);
+  font-size: 0.85rem;
+}

@@ -40,7 +40,7 @@ const RecentChangesDrawer = ({ isOpen, onClose }) => {
     if (isOpen) {
       setLoading(true);
       setError(null);
-      api.get('/reports/audit')
+      api.get('/audit')
         .then(response => {
           if (isMounted) {
             setLogs(response.data);

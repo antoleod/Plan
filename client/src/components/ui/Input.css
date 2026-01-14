@@ -1,0 +1,22 @@
+.ui-input {
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  background: #fff;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+}
+
+.ui-input:focus {
+  outline: none;
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 2px rgba(12, 165, 176, 0.2);
+}
+
+.ui-input--sm {
+  padding: 0.4rem 0.8rem;
+}
+
+.ui-input--md {
+  padding: 0.55rem 0.9rem;
+}

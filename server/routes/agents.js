@@ -1,17 +1,12 @@
 const express = require('express');
 const { getFixedAgents, setAgentFixedStatus } = require('../services/fixedAgentService');
 const auditService = require('../../AuditService');
+const { authenticate, requireRole } = require('../middleware/auth');
 
 // Mocking a service that would interact with the Excel Adapter
 const getAgentsFromExcel = async () => ([
     { id: '1', name: 'juan' }, { id: '2', name: 'maria' }, { id: '3', name: 'pedro' },
 ]);
-
-// Mocking auth middleware from your architecture
-const requireRole = (role) => (req, res, next) => {
-    console.log(`Auth check: Role '${role}' required. Access granted for demo.`);
-    next();
-};
 
 const router = express.Router();
 
@@ -19,7 +14,7 @@ const router = express.Router();
  * GET /api/agents
  * Returns a list of all agents, merging their "fixed" status from our JSON file.
  */
-router.get('/', async (req, res) => {
+router.get('/', authenticate, async (req, res) => {
     try {
         const [agentsFromExcel, fixedAgentsMap] = await Promise.all([
             getAgentsFromExcel(),
@@ -42,7 +37,7 @@ router.get('/', async (req, res) => {
  * POST /api/agents/:name/fixed
  * Sets the fixed assignment status for an agent. Manager role required.
  */
-router.post('/:name/fixed', requireRole('MANAGER'), async (req, res) => {
+router.post('/:name/fixed', authenticate, requireRole('MANAGER'), async (req, res) => {
     const { name } = req.params;
     const { fixed } = req.body;
 

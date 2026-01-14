@@ -50,23 +50,29 @@ const DragDropPlanner = ({ date }) => {
       sourceDate: date,
       targetRow: targetRow,
       targetDate: date, // For now, same day moves
-      force: false
     };
 
-    await executeMove(movePayload);
+    // Initial attempt without override
+    await executeMove(movePayload, null);
   };
 
-  const executeMove = async (payload) => {
+  const executeMove = async (changes, override = null) => {
     try {
-      const res = await fetch('/api/planning/move', {
+      const res = await fetch('/api/planning/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: JSON.stringify({
+          action: 'MOVE',
+          changes: changes,
+          override: override
+        })
       });
 
       if (res.status === 409) {
         const data = await res.json();
-        setWarningData({ warnings: data.warnings, pendingMove: payload });
+        // If backend suggests a replacement, add it to warnings
+        const warnings = data.suggestion ? [...data.warnings, data.suggestion] : data.warnings;
+        setWarningData({ warnings: warnings, pendingMove: changes });
         return;
       }
 
@@ -79,9 +85,9 @@ const DragDropPlanner = ({ date }) => {
     }
   };
 
-  const handleConfirmOverride = async () => {
+  const handleConfirmOverride = async (reason) => {
     if (warningData) {
-      await executeMove({ ...warningData.pendingMove, force: true });
+      await executeMove(warningData.pendingMove, { allowed: true, reason });
       setWarningData(null);
     }
   };

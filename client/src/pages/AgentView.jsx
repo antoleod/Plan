@@ -1,8 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, createRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
 import PlanningGrid from '../components/PlanningGrid';
 import Header from '../components/Header';
+import RoleNav from '../components/RoleNav';
+import RecentChangesDrawer from '../components/copilot/RecentChangesDrawer';
+import Button from '../components/ui/Button';
+import Input from '../components/ui/Input';
+import { agentNavSections } from '../config/navigation';
 import './AgentView.css';
 
 function AgentView() {
@@ -13,21 +18,34 @@ function AgentView() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showOthers, setShowOthers] = useState(false);
   const [mySite, setMySite] = useState(null);
+  const [recentChanges, setRecentChanges] = useState([]);
+  const [changesLoading, setChangesLoading] = useState(false);
+  const [changesError, setChangesError] = useState(null);
+  const [isAuditOpen, setIsAuditOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState(agentNavSections[0]?.id || 'myschedule');
+
+  const sectionRefs = useMemo(() => {
+    const refs = {};
+    agentNavSections.forEach((section) => {
+      refs[section.id] = createRef();
+    });
+    return refs;
+  }, []);
 
   useEffect(() => {
     loadData();
+    loadRecentChanges();
   }, []);
 
   const loadData = async () => {
     try {
       setLoading(true);
       const agentName = user?.name || 'DIOSES Juan';
-
       const myWeekResponse = await api.get(`/planning/agent/${encodeURIComponent(agentName)}/week`);
       const myWeek = myWeekResponse.data;
 
-      const mySiteFromData = myWeek.week?.[0]?.daySummary?.site ||
-        myWeek.week?.[0]?.summary?.site || null;
+      const mySiteFromData =
+        myWeek.week?.[0]?.daySummary?.site || myWeek.week?.[0]?.summary?.site || null;
       setMySite(mySiteFromData);
 
       let allAgents = [];
@@ -38,15 +56,15 @@ function AgentView() {
         allAgents = allAgentsResponse.data.agents || [];
         hourHeaders = allAgentsResponse.data.hourHeaders || myWeek.hourHeaders || [];
       } catch (err) {
-        console.log('Other agents are not available (manager role required):', err.response?.data?.error);
+        console.log('Other agents not available:', err.response?.data?.error);
         allAgents = [];
       }
 
       const myGroup = [];
       const others = [];
 
-      allAgents.forEach(agent => {
-        const hasSameSite = agent.week?.some(day => {
+      allAgents.forEach((agent) => {
+        const hasSameSite = agent.week?.some((day) => {
           const daySite = day.daySummary?.site || day.summary?.site;
           return daySite === mySiteFromData && mySiteFromData;
         });
@@ -55,7 +73,8 @@ function AgentView() {
 
         if (isMe) {
           return;
-        } else if (hasSameSite) {
+        }
+        if (hasSameSite) {
           myGroup.push(agent);
         } else {
           others.push(agent);
@@ -77,14 +96,35 @@ function AgentView() {
     }
   };
 
-  const handleSearchChange = (e) => {
-    setSearchQuery(e.target.value);
+  const loadRecentChanges = async () => {
+    try {
+      setChangesLoading(true);
+      setChangesError(null);
+      const response = await api.get('/audit');
+      setRecentChanges(response.data.slice(0, 4));
+    } catch (err) {
+      setChangesError('Failed to load audit entries.');
+    } finally {
+      setChangesLoading(false);
+    }
+  };
+
+  const handleSearchChange = (event) => {
+    setSearchQuery(event.target.value);
   };
 
   const filterAgents = (agents) => {
     if (!searchQuery.trim()) return agents;
     const query = searchQuery.toLowerCase();
-    return agents.filter(agent => agent.name.toLowerCase().includes(query));
+    return agents.filter((agent) => agent.name.toLowerCase().includes(query));
+  };
+
+  const handleNavSelect = (id) => {
+    setActiveSection(id);
+    const target = sectionRefs[id];
+    if (target && target.current) {
+      target.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
   };
 
   if (loading) {
@@ -95,11 +135,13 @@ function AgentView() {
     );
   }
 
-  if (error) {
+  if (error && !data) {
     return (
       <div className="error-container">
         <div className="error-message">{error}</div>
-        <button onClick={loadData} className="btn-primary">Retry</button>
+        <Button variant="flat" size="sm" onClick={loadData}>
+          Retry
+        </Button>
       </div>
     );
   }
@@ -107,26 +149,36 @@ function AgentView() {
   return (
     <div className="agent-view">
       <Header user={user} onLogout={logout} />
+      <div className="agent-layout">
+        <RoleNav
+          role="Agent"
+          items={agentNavSections}
+          activeId={activeSection}
+          onSelect={handleNavSelect}
+        />
 
-      <div className="container">
-        <div className="view-header">
-          <h1>My Schedule</h1>
-          <div className="header-actions">
-            <input
-              type="text"
-              placeholder="Search agent..."
-              value={searchQuery}
-              onChange={handleSearchChange}
-              className="search-input"
-            />
-            <button onClick={loadData} className="btn-secondary">Refresh</button>
-          </div>
-        </div>
-
-        {data && (
-          <>
-            <section className="planning-section">
-              <h2 className="section-title">My Week</h2>
+        <main className="agent-main">
+          <section ref={sectionRefs.myschedule} id="myschedule" className="agent-section">
+            <div className="section-header">
+              <div>
+                <p className="section-eyebrow">My Schedule</p>
+                <h1>Weekly plan</h1>
+              </div>
+              <div className="section-actions">
+                <Input
+                  className="search-input"
+                  size="md"
+                  type="text"
+                  placeholder="Search agent..."
+                  value={searchQuery}
+                  onChange={handleSearchChange}
+                />
+                <Button variant="flat" size="sm" onClick={loadData}>
+                  Refresh
+                </Button>
+              </div>
+            </div>
+            {data && (
               <PlanningGrid
                 data={{
                   agents: [data.myWeek],
@@ -134,33 +186,35 @@ function AgentView() {
                 }}
                 editable={false}
               />
-            </section>
-
-            {data.myGroup && data.myGroup.length > 0 && (
-              <section className="planning-section">
-                <h2 className="section-title">
-                  Team {mySite && `(${mySite})`}
-                </h2>
-                <PlanningGrid
-                  data={{
-                    agents: filterAgents(data.myGroup),
-                    hourHeaders: data.hourHeaders
-                  }}
-                  editable={false}
-                />
-              </section>
             )}
+          </section>
 
-            {data.others && data.others.length > 0 && (
-              <section className="planning-section">
-                <button
-                  className="section-toggle"
-                  onClick={() => setShowOthers(!showOthers)}
+          <section ref={sectionRefs.team} id="team" className="agent-section">
+            <div className="section-header">
+              <div>
+                <p className="section-eyebrow">Team View</p>
+                <h2>{mySite ? `Team (${mySite})` : 'Team'}</h2>
+              </div>
+            </div>
+            {data?.myGroup?.length > 0 && (
+              <PlanningGrid
+                data={{
+                  agents: filterAgents(data.myGroup),
+                  hourHeaders: data.hourHeaders
+                }}
+                editable={false}
+              />
+            )}
+            {data?.others?.length > 0 && (
+              <div className="team-others">
+                <Button
+                  type="button"
+                  variant="flat"
+                  size="sm"
+                  onClick={() => setShowOthers((prev) => !prev)}
                 >
-                  <h2 className="section-title">
-                    {showOthers ? '▼' : '▶'} Other Agents ({filterAgents(data.others).length})
-                  </h2>
-                </button>
+                  {showOthers ? 'Hide' : 'Show'} other agents ({filterAgents(data.others).length})
+                </Button>
                 {showOthers && (
                   <PlanningGrid
                     data={{
@@ -170,11 +224,47 @@ function AgentView() {
                     editable={false}
                   />
                 )}
-              </section>
+              </div>
             )}
-          </>
-        )}
+          </section>
+
+          <section ref={sectionRefs.changes} id="changes" className="agent-section">
+            <div className="section-header">
+              <div>
+                <p className="section-eyebrow">Changes (read-only)</p>
+                <h2>Recent audit notes</h2>
+              </div>
+              <div className="section-actions">
+                <Button variant="flat" size="sm" onClick={loadRecentChanges}>
+                  Reload
+                </Button>
+                <Button variant="flat" size="sm" onClick={() => setIsAuditOpen(true)}>
+                  View full log
+                </Button>
+              </div>
+            </div>
+            <div className="changes-list">
+              {changesLoading && <p className="section-note">Loading audit entries...</p>}
+              {changesError && <p className="section-note section-note--error">{changesError}</p>}
+              {!changesLoading && recentChanges.length === 0 && (
+                <p className="section-note">No recent changes.</p>
+              )}
+              {recentChanges.map((entry, index) => (
+                <div key={`${entry.timestamp}-${index}`} className="changes-item">
+                  <div className="changes-meta">
+                    <strong>{entry.action}</strong>
+                    <span>{new Date(entry.timestamp).toLocaleString()}</span>
+                  </div>
+                  <p className="changes-user">By {entry.user || 'system'}</p>
+                  <pre className="changes-details">{JSON.stringify(entry.details, null, 2)}</pre>
+                </div>
+              ))}
+            </div>
+          </section>
+        </main>
       </div>
+
+      <RecentChangesDrawer isOpen={isAuditOpen} onClose={() => setIsAuditOpen(false)} />
     </div>
   );
 }

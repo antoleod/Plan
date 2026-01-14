@@ -1,22 +1,26 @@
 .app-header {
-  background: var(--surface-color);
+  background: rgba(255, 255, 255, 0.92);
   border-bottom: 1px solid var(--border-color);
-  padding: 1rem 0;
+  padding: 0.75rem 0;
   position: sticky;
   top: 0;
-  z-index: 100;
-  box-shadow: var(--shadow);
+  z-index: 120;
+  box-shadow: 0 20px 40px -30px rgba(3, 12, 30, 0.6);
 }
 
 .header-content {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 1.25rem;
 }
 
 .app-header h2 {
   font-size: 1.25rem;
-  color: var(--text-primary);
+  color: var(--navy-color);
+  margin: 0;
 }
 
 .header-user {
@@ -26,30 +30,30 @@
 }
 
 .user-name {
-  font-weight: 500;
+  font-weight: 600;
   color: var(--text-primary);
 }
 
 .user-role {
-  font-size: 0.875rem;
-  color: var(--text-secondary);
-  background: var(--bg-color);
-  padding: 0.25rem 0.75rem;
-  border-radius: 12px;
+  font-size: 0.85rem;
+  color: #fff;
+  background: var(--navy-color);
+  padding: 0.2rem 0.7rem;
+  border-radius: 999px;
 }
 
 .btn-logout {
-  padding: 0.5rem 1rem;
+  padding: 0.45rem 1rem;
   background: transparent;
-  color: var(--text-secondary);
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  font-size: 0.875rem;
-  transition: all 0.2s;
+  color: var(--navy-color);
+  border: 1px solid rgba(4, 27, 52, 0.3);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  transition: all 0.2s ease;
 }
 
 .btn-logout:hover {
-  background: var(--bg-color);
-  color: var(--text-primary);
-  border-color: var(--primary-color);
+  background: var(--accent-color);
+  color: #fff;
+  border-color: var(--accent-color);
 }

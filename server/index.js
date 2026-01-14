@@ -10,6 +10,7 @@ const auditRoutes = require('./routes/audit');
 const insightsRoutes = require('./routes/insights'); // Nueva ruta
 const preplanRoutes = require('./routes/preplan'); // Nueva ruta
 const reportsRoutes = require('./routes/reports'); // Nueva ruta
+const agentsRoutes = require('./routes/agents');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -27,6 +28,7 @@ app.use('/api/audit', auditRoutes);
 app.use('/api/insights', insightsRoutes); // Registrar nueva ruta
 app.use('/api/preplan', preplanRoutes); // Registrar nueva ruta
 app.use('/api/reports', reportsRoutes); // Registrar nueva ruta
+app.use('/api/agents', agentsRoutes);
 
 // Serve static files in production
 if (process.env.NODE_ENV === 'production') {

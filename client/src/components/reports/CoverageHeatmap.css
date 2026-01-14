@@ -1,0 +1,41 @@
+.heatmap-scroll {
+  overflow-x: auto;
+}
+
+.heatmap-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+  min-width: 600px;
+}
+
+.heatmap-table th,
+.heatmap-table td {
+  padding: 0.45rem;
+  text-align: center;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.heatmap-site {
+  text-align: left;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.heatmap-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 26px;
+  border-radius: 6px;
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.82rem;
+}
+
+.heatmap-empty {
+  font-size: 0.9rem;
+  color: var(--muted-color);
+  padding: 1rem 0;
+}
