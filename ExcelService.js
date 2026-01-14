@@ -1,9 +1,9 @@
 const ExcelJS = require('exceljs');
 const path = require('path');
-const mapping = require('./server/config/mapping.config.json');
+const mapping = require(path.join(process.cwd(), 'server/config/mapping.config.json'));
 
 const EXCEL_FILE_PATH = path.join(
-  __dirname,
+  process.cwd(),
   process.env.EXCEL_FILE_NAME || 'Planning_2026-01_FULLY_EDITABLE.xlsm'
 );
 
@@ -93,9 +93,9 @@ async function getAssignmentsForDay(dateString) {
     return [];
   }
 
+  const statusPalette = buildStatusPalette(sheet);
   const assignments = [];
   const agentEndRow = mapping.agentEndRow ?? 98;
-  const statusPalette = buildStatusPalette(sheet);
 
   for (let rowNum = mapping.agentStartRow; rowNum <= agentEndRow; rowNum++) {
     const row = sheet.getRow(rowNum);
@@ -145,10 +145,9 @@ async function getAssignmentsForMonth(year, month) {
 
   if (monthColumns.length === 0) return [];
 
-  const statusPalette = buildStatusPalette(sheet);
-
   const allAssignments = [];
   const agentEndRow = mapping.agentEndRow ?? 98;
+  const statusPalette = buildStatusPalette(sheet);
 
   for (let rowNum = mapping.agentStartRow; rowNum <= agentEndRow; rowNum++) {
     const row = sheet.getRow(rowNum);

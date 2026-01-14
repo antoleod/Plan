@@ -1,0 +1,15 @@
+{
+  "sites": {
+    "WD Spinelli": { "min": 2, "target": 4 },
+    "WD Kohl": { "min": 2, "target": 3 },
+    "WD Martens": { "min": 1, "target": 2 },
+    "WD LUX/STR": { "min": 1, "target": 2 },
+    "Serv. phone": { "min": 1, "target": 1 }
+  },
+  "breaks": {
+    "maxConcurrent": 2,
+    "minCoverageDuringBreak": 1,
+    "checkWindowStart": "11:00",
+    "checkWindowEnd": "15:00"
+  }
+}

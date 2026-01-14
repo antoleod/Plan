@@ -1,131 +1,164 @@
-const rulesConfig = require('./server/config/rules.config.json');
-const mappingConfig = require('./server/config/mapping.config.json');
-const rotationHistory = require('./server/services/RotationHistoryService');
+const path = require('path');
+const fs = require('fs');
+const mapping = require(path.join(process.cwd(), 'server/config/mapping.config.json'));
 
 class RuleEngine {
   constructor() {
-    this.rules = rulesConfig;
-    this.mapping = mappingConfig;
-    this.history = rotationHistory;
-    this.fixedAgents = rulesConfig.fixedAgents || [];
+    this.configPath = path.join(process.cwd(), 'server/config/rules.config.json');
+    this.rules = this.loadRules();
   }
 
-  analyzeDay(assignments) {
-    const alerts = [];
-    const { coverageBySite, coverageByStatus } = this._calculateCoverage(assignments);
-
-    Object.keys(this.rules.coverage.sites).forEach(siteName => {
-      const siteRule = this.rules.coverage.sites[siteName];
-      const currentCount = coverageBySite[siteName] || 0;
-
-      if (currentCount < siteRule.min) {
-        alerts.push({
-          type: 'CRITICAL_COVERAGE',
-          message: `Coverage for ${siteName} is below minimum (${currentCount}/${siteRule.min}).`,
-          site: siteName,
-          severity: 'high'
-        });
-      } else if (currentCount < siteRule.target) {
-        alerts.push({
-          type: 'WARNING_COVERAGE',
-          message: `Coverage for ${siteName} is between minimum and target (${currentCount}/${siteRule.target}).`,
-          site: siteName,
-          severity: 'medium'
-        });
-      }
-    });
-
-    const assignmentsOnBreak = assignments.filter(a => this._isBreakStatus(a.status));
-    const breaksBySite = {};
-    assignmentsOnBreak.forEach(a => {
-      if (a.site) {
-        breaksBySite[a.site] = (breaksBySite[a.site] || 0) + 1;
-      }
-    });
-
-    Object.keys(breaksBySite).forEach(siteName => {
-      const totalAtSite = coverageBySite[siteName] || 0;
-      const breaksAtSite = breaksBySite[siteName];
-      const remaining = totalAtSite - breaksAtSite;
-      if (remaining < this.rules.breaks.minStaffOnSite) {
-        alerts.push({
-          type: 'BREAK_COVERAGE',
-          message: `Site ${siteName} loses critical coverage while agents are on break.`,
-          site: siteName,
-          severity: 'medium'
-        });
-      }
-    });
-
-    const missionAgents = assignments.filter(a => a.status === 'Mission');
-    const sickAgents = assignments.filter(a => this._isSickStatus(a.status));
-    const tardyAgents = assignments.filter(a => this._isTardyStatus(a.status));
-
-    return {
-      coverage: {
-        bySite: coverageBySite,
-        byStatus: coverageByStatus
-      },
-      alerts,
-      missionAgents,
-      sickAgents,
-      tardyAgents
-    };
+  loadRules() {
+    try {
+      const data = fs.readFileSync(this.configPath, 'utf8');
+      return JSON.parse(data);
+    } catch (error) {
+      console.error('Error loading rules config:', error);
+      return { sites: {}, breaks: {} };
+    }
   }
 
-  _calculateCoverage(assignments) {
-    const bySite = {};
-    const byStatus = {};
-
+  /**
+   * Calcula el estado de cobertura para un día específico.
+   * @param {Array} assignments - Lista de asignaciones del ExcelService
+   */
+  analyzeCoverage(assignments) {
+    const siteCounts = {};
+    
+    // 1. Contar agentes por sitio
     assignments.forEach(a => {
-      if (!a.site || !a.status || a.status === 'OFF') return;
-
-      bySite[a.site] = (bySite[a.site] || 0) + 1;
-      byStatus[a.status] = (byStatus[a.status] || 0) + 1;
+      if (a.site && a.status === 'Present') {
+        siteCounts[a.site] = (siteCounts[a.site] || 0) + 1;
+      }
     });
 
-    return { coverageBySite: bySite, coverageByStatus: byStatus };
+    const coverageReport = [];
+    
+    // 2. Comparar con reglas
+    for (const [siteName, rule] of Object.entries(this.rules.sites)) {
+      const current = siteCounts[siteName] || 0;
+      let status = 'OK';
+      
+      if (current < rule.min) {
+        status = 'CRITICAL';
+      } else if (current < rule.target) {
+        status = 'WARNING';
+      }
+
+      coverageReport.push({
+        site: siteName,
+        current,
+        min: rule.min,
+        target: rule.target,
+        status
+      });
+    }
+
+    return coverageReport;
   }
 
-  validateMove(currentAssignments, { sourceSite, sourceAgent, targetSite, targetAgent }) {
-    const warnings = [];
+  /**
+   * Detecta ventanas de tiempo donde las pausas simultáneas rompen la cobertura.
+   * Usa horarios reales (si existen) o defaults configurados.
+   */
+  analyzeBreakConflicts(assignments) {
+    const alerts = [];
+    const { breaks: breakRules } = this.rules;
+    const { standardShift } = mapping;
+    
+    // Configuración de ventana de chequeo (default 11:00 - 15:00)
+    const checkStartStr = breakRules.checkWindowStart || "11:00";
+    const checkEndStr = breakRules.checkWindowEnd || "15:00";
+    const checkStart = this._timeToMinutes(checkStartStr);
+    const checkEnd = this._timeToMinutes(checkEndStr);
+    
+    // Agrupar por sitio
+    const agentsBySite = {};
+    assignments.forEach(a => {
+      if (a.site && a.status === 'Present') {
+        if (!agentsBySite[a.site]) agentsBySite[a.site] = [];
+        agentsBySite[a.site].push(a);
+      }
+    });
 
-    if (sourceSite) {
-      const siteRule = this.rules.coverage.sites[sourceSite];
-      if (siteRule) {
-        const currentCount = currentAssignments.filter(a => a.site === sourceSite).length;
-        if (currentCount <= siteRule.min) {
-          warnings.push(`Removing an assignment from ${sourceSite} will drop below its minimum (${siteRule.min}).`);
+    // Analizar cada sitio
+    for (const [site, agents] of Object.entries(agentsBySite)) {
+      const siteRule = this.rules.sites[site];
+      if (!siteRule) continue;
+
+      // Mínimo requerido durante pausas (puede ser menor al mínimo operativo normal)
+      const minRequired = breakRules.minStaffOnSite ?? siteRule.min;
+
+      // Chequear cada 15 minutos dentro de la ventana
+      for (let time = checkStart; time < checkEnd; time += 15) {
+        let availableAgents = 0;
+
+        for (const agent of agents) {
+          // 1. Si el agente tiene pausas explícitas
+          let agentBreaks = agent.breaks; 
+          
+          // 2. Si no, usar default (asumimos el primero por seguridad/worst-case)
+          if (!agentBreaks || agentBreaks.length === 0) {
+             agentBreaks = standardShift.defaultBreaks.map(b => ({
+               start: this._timeToMinutes(b.start),
+               end: this._timeToMinutes(b.end)
+             }));
+             // Asumimos el primer break si no hay info, para detectar conflictos de "todos a la vez"
+             if (agentBreaks.length > 0) agentBreaks = [agentBreaks[0]];
+          } else {
+             // Convertir pausas explícitas a minutos si vienen en string
+             agentBreaks = agentBreaks.map(b => ({
+               start: typeof b.start === 'string' ? this._timeToMinutes(b.start) : b.start,
+               end: typeof b.end === 'string' ? this._timeToMinutes(b.end) : b.end
+             }));
+          }
+
+          const isOnBreak = agentBreaks.some(b => time >= b.start && time < b.end);
+          if (!isOnBreak) {
+            availableAgents++;
+          }
+        }
+
+        if (availableAgents < minRequired) {
+          const timeStr = this._minutesToTime(time);
+          // Evitar duplicados cercanos (mismo sitio, misma alerta, < 60 min de diferencia)
+          const existingAlert = alerts.find(a => 
+            a.site === site && 
+            a.type === 'BREAK_COVERAGE' && 
+            this._isTimeClose(a.time, timeStr)
+          );
+
+          if (!existingAlert) {
+            alerts.push({
+              type: 'BREAK_COVERAGE',
+              severity: 'HIGH',
+              site,
+              time: timeStr,
+              message: `Riesgo de cobertura en pausa (${timeStr}). Quedan ${availableAgents} agentes (Min: ${minRequired})`
+            });
+          }
         }
       }
     }
 
-    if (targetAgent && targetSite) {
-      if (this.fixedAgents.includes(targetAgent)) {
-        warnings.push(`Agent ${targetAgent} is marked as fixed and should remain at their current site.`);
-      }
-
-      const lookbackWeeks = (this.rules.rotation?.lookbackWeeks || 2);
-      const lookbackDays = Math.max(1, lookbackWeeks) * 7;
-      const recentSites = this.history.recentSites(targetAgent, lookbackDays);
-      if (recentSites.includes(targetSite)) {
-        warnings.push(`Agent ${targetAgent} already covered ${targetSite} within the last ${lookbackWeeks} weeks.`);
-      }
-    }
-
-    return { valid: warnings.length === 0, warnings };
+    return alerts;
   }
 
-  _isBreakStatus(status) {
-    return ['Break', 'Pause'].includes(status);
+  _timeToMinutes(timeStr) {
+    const [h, m] = timeStr.split(':').map(Number);
+    return h * 60 + m;
   }
 
-  _isSickStatus(status) {
-    return ['Maladie', 'Sick', 'Sick Leave', 'Illness'].includes(status);
+  _minutesToTime(minutes) {
+    const h = Math.floor(minutes / 60).toString().padStart(2, '0');
+    const m = (minutes % 60).toString().padStart(2, '0');
+    return `${h}:${m}`;
   }
 
-  _isTardyStatus(status) {
-    return ['Tardiness', 'Late', 'Delayed'].includes(status);
+  _isTimeClose(timeStr1, timeStr2) {
+    const t1 = this._timeToMinutes(timeStr1);
+    const t2 = this._timeToMinutes(timeStr2);
+    return Math.abs(t1 - t2) < 60;
   }
 }
 

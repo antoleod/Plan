@@ -94,13 +94,33 @@ class ExcelMappingService {
   /**
    * Get agent's day range
    */
-  getAgentDayRange(agentRow) {
+  getColumnsPerDay() {
+    const startColNum = this.columnToNumber(this.config.dayStartColumn);
+    const endColNum = this.columnToNumber(this.config.dayEndColumn);
+    return endColNum - startColNum + 1;
+  }
+
+  getAgentDayRange(agentRow, dayIndex = 0) {
+    const daysInWeek = this.config.daysInWeek ?? 7;
+    if (dayIndex < 0 || dayIndex >= daysInWeek) {
+      throw new Error(`Invalid day index ${dayIndex}, must be between 0 and ${daysInWeek - 1}`);
+    }
+
+    const startColNum = this.columnToNumber(this.config.dayStartColumn);
+    const columnsPerDay = this.getColumnsPerDay();
+    const targetStart = startColNum + dayIndex * columnsPerDay;
+    const targetEnd = targetStart + columnsPerDay - 1;
+
+    const startColumn = this.numberToColumn(targetStart);
+    const endColumn = this.numberToColumn(targetEnd);
+
     return {
-      startColumn: this.config.dayStartColumn,
-      endColumn: this.config.dayEndColumn,
+      startColumn,
+      endColumn,
       row: agentRow,
-      startAddress: this.getCellAddress(agentRow, this.config.dayStartColumn),
-      endAddress: this.getCellAddress(agentRow, this.config.dayEndColumn)
+      startAddress: this.getCellAddress(agentRow, startColumn),
+      endAddress: this.getCellAddress(agentRow, endColumn),
+      dayIndex
     };
   }
 

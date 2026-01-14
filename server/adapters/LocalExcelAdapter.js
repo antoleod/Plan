@@ -191,6 +191,24 @@ class LocalExcelAdapter extends ExcelAdapter {
     const stats = fs.statSync(this.filePath);
     return stats.mtime.getTime() !== this.lastModified.getTime();
   }
+
+  /**
+   * Encuentra la primera fila vacía en una columna dada dentro de un rango.
+   * Útil para "Add Agent" de forma segura.
+   */
+  async findFirstEmptyRow(sheetName, colLetter, startRow, endRow) {
+    const sheet = this.getSheet(sheetName);
+    
+    for (let row = startRow; row <= endRow; row++) {
+      const cellAddress = `${colLetter}${row}`;
+      const cell = sheet.getCell(cellAddress);
+      // Consideramos vacía si el valor es null, undefined o string vacío
+      if (cell.value === null || cell.value === undefined || cell.value === '') {
+        return row;
+      }
+    }
+    return null; // No hay espacio en el rango
+  }
 }
 
 module.exports = LocalExcelAdapter;

@@ -182,7 +182,6 @@ class PlanningService {
       throw new Error(`Agent "${agentName}" not found`);
     }
 
-    const dayRange = this.mappingService.getAgentDayRange(agentRow);
     const hourHeaders = await this.mappingService.getHourHeaders();
     
     // Parse week data from Excel
@@ -191,6 +190,7 @@ class PlanningService {
     // For MVP, we'll return the full day range
     // In production, you'd map this to actual dates
     for (let i = 0; i < 7; i++) {
+      const dayRange = this.mappingService.getAgentDayRange(agentRow, i);
       const dayData = {
         day: i,
         cells: []
@@ -242,11 +242,11 @@ class PlanningService {
     };
     
     for (const agent of agents) {
-      const dayRange = this.mappingService.getAgentDayRange(agent.row);
       const weekData = [];
       
       // Get 7 days of data
       for (let day = 0; day < 7; day++) {
+        const dayRange = this.mappingService.getAgentDayRange(agent.row, day);
         const dayData = {
           day,
           cells: []
@@ -295,7 +295,7 @@ class PlanningService {
       throw new Error(`Agent "${agentName}" not found`);
     }
 
-    const dayRange = this.mappingService.getAgentDayRange(agentRow);
+    const dayRange = this.mappingService.getAgentDayRange(agentRow, dayIndex);
     
     // Calculate which columns to update based on time slots
     // This is simplified - in production, you'd map time slots to columns

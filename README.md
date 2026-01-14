@@ -135,6 +135,7 @@ El archivo `server/config/mapping.config.json` define cómo mapear el Excel:
   "sheet": "Planning",
   "agentNameColumn": "B",
   "agentStartRow": 57,
+  "agentEndRow": 98,
   "hourHeaderRow": 56,
   "dayStartColumn": "PB",
   "dayEndColumn": "PY",

@@ -1,7 +1,7 @@
 const fs = require('fs/promises');
 const path = require('path');
 
-const LOG_FILE_PATH = path.join(__dirname, '../data/audit.log.jsonl');
+const LOG_FILE_PATH = path.join(process.cwd(), 'server/data/audit.log.jsonl');
 
 /**
  * Ensures the directory for the log file exists.

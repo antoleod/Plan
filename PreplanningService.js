@@ -1,11 +1,11 @@
+const path = require('path');
 const excelService = require('./ExcelService');
 const auditService = require('./AuditService');
-const mapping = require('./server/config/mapping.config.json');
+const mapping = require(path.join(process.cwd(), 'server/config/mapping.config.json'));
 const ExcelJS = require('exceljs');
-const path = require('path');
 const rotationHistory = require('./server/services/RotationHistoryService');
 
-const EXCEL_FILE_PATH = path.join(__dirname, '../../', process.env.EXCEL_FILE_NAME || 'Planning_2026-01_FULLY_EDITABLE.xlsm');
+const EXCEL_FILE_PATH = path.join(process.cwd(), process.env.EXCEL_FILE_NAME || 'Planning_2026-01_FULLY_EDITABLE.xlsm');
 
 /**
  * Generates a pre-plan for a target month by copying from a source month.
