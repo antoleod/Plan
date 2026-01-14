@@ -5,7 +5,7 @@ import './AddAgentModal.css';
 function AddAgentModal({ onSave, onClose, saving }) {
   const [formData, setFormData] = useState({
     name: '',
-    function: '',
+    role: '',
     defaultSite: ''
   });
   const [palette, setPalette] = useState(null);
@@ -25,26 +25,24 @@ function AddAgentModal({ onSave, onClose, saving }) {
   };
 
   const handleChange = (field, value) => {
-    setFormData({
-      ...formData,
+    setFormData(prev => ({
+      ...prev,
       [field]: value
-    });
+    }));
     setErrors([]);
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
+  const handleSubmit = async (event) => {
+    event.preventDefault();
     if (!formData.name.trim()) {
-      setErrors(['El nombre es obligatorio']);
+      setErrors(['Name is required']);
       return;
     }
-    
-    setErrors([]);
+
     try {
       await onSave(formData);
     } catch (err) {
-      const errorMsg = err.response?.data?.error || 'Error al añadir agente';
+      const errorMsg = err.response?.data?.error || 'Failed to add agent';
       setErrors([errorMsg]);
       console.error('Add agent error:', err);
     }
@@ -52,69 +50,64 @@ function AddAgentModal({ onSave, onClose, saving }) {
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+      <div className="modal-content" onClick={(event) => event.stopPropagation()}>
         <div className="modal-header">
-          <h2>➕ Añadir Agente</h2>
-          <button className="modal-close" onClick={onClose}>×</button>
+          <h2>Add Agent</h2>
+          <button className="modal-close" onClick={onClose}>&times;</button>
         </div>
-
         <div className="modal-body">
           {errors.length > 0 && (
             <div className="error-list">
-              {errors.map((error, idx) => (
-                <div key={idx} className="error-item">{error}</div>
+              {errors.map((error, index) => (
+                <div key={index} className="error-item">{error}</div>
               ))}
             </div>
           )}
-
           <form onSubmit={handleSubmit}>
             <div className="form-section">
               <div className="form-group">
-                <label>Nombre y Apellido *</label>
+                <label>Full name *</label>
                 <input
                   type="text"
                   value={formData.name}
-                  onChange={(e) => handleChange('name', e.target.value)}
-                  placeholder="Ej: DIOSES Juan"
+                  onChange={(event) => handleChange('name', event.target.value)}
+                  placeholder="e.g. DIOSES Juan"
                   required
                   autoFocus
                 />
               </div>
             </div>
-
             <div className="form-section">
               <div className="form-group">
-                <label>Función</label>
+                <label>Role</label>
                 <input
                   type="text"
-                  value={formData.function}
-                  onChange={(e) => handleChange('function', e.target.value)}
-                  placeholder="Opcional"
+                  value={formData.role}
+                  onChange={(event) => handleChange('role', event.target.value)}
+                  placeholder="Optional"
                 />
               </div>
             </div>
-
             <div className="form-section">
               <div className="form-group">
-                <label>Site por Defecto</label>
+                <label>Default site</label>
                 <select
                   value={formData.defaultSite}
-                  onChange={(e) => handleChange('defaultSite', e.target.value)}
+                  onChange={(event) => handleChange('defaultSite', event.target.value)}
                 >
-                  <option value="">Ninguno</option>
-                  {palette?.sites && Object.keys(palette.sites).map((site) => (
+                  <option value="">None</option>
+                  {palette?.sites && Object.keys(palette.sites).map(site => (
                     <option key={site} value={site}>{site}</option>
                   ))}
                 </select>
               </div>
             </div>
-
             <div className="modal-actions">
               <button type="button" onClick={onClose} className="btn-secondary">
-                Cancelar
+                Cancel
               </button>
               <button type="submit" disabled={saving} className="btn-primary">
-                {saving ? 'Añadiendo...' : 'Añadir Agente'}
+                {saving ? 'Adding...' : 'Add Agent'}
               </button>
             </div>
           </form>

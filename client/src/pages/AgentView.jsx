@@ -22,46 +22,38 @@ function AgentView() {
     try {
       setLoading(true);
       const agentName = user?.name || 'DIOSES Juan';
-      
-      // Load agent's own week (this endpoint works for AGENT role)
+
       const myWeekResponse = await api.get(`/planning/agent/${encodeURIComponent(agentName)}/week`);
       const myWeek = myWeekResponse.data;
-      
-      // Determine my site from first day with site
-      const mySiteFromData = myWeek.week?.[0]?.daySummary?.site || 
-                            myWeek.week?.[0]?.summary?.site || null;
+
+      const mySiteFromData = myWeek.week?.[0]?.daySummary?.site ||
+        myWeek.week?.[0]?.summary?.site || null;
       setMySite(mySiteFromData);
-      
-      // Try to load all agents for grouping (read-only view)
-      // This endpoint allows AGENT role to see other agents
+
       let allAgents = [];
       let hourHeaders = myWeek.hourHeaders || [];
-      
+
       try {
         const allAgentsResponse = await api.get('/planning/agents/view');
         allAgents = allAgentsResponse.data.agents || [];
         hourHeaders = allAgentsResponse.data.hourHeaders || myWeek.hourHeaders || [];
       } catch (err) {
-        // If it fails, agent will just see their own planning
-        console.log('Could not load other agents (may require MANAGER role):', err.response?.data?.error);
+        console.log('Other agents are not available (manager role required):', err.response?.data?.error);
         allAgents = [];
       }
-      
-      // Group agents by site
+
       const myGroup = [];
       const others = [];
-      
+
       allAgents.forEach(agent => {
-        // Check if agent has same site on any day
         const hasSameSite = agent.week?.some(day => {
           const daySite = day.daySummary?.site || day.summary?.site;
           return daySite === mySiteFromData && mySiteFromData;
         });
-        
+
         const isMe = agent.name === agentName || agent.agent === agentName;
-        
+
         if (isMe) {
-          // My planning goes first, skip it here
           return;
         } else if (hasSameSite) {
           myGroup.push(agent);
@@ -69,19 +61,17 @@ function AgentView() {
           others.push(agent);
         }
       });
-      
+
       setData({
-        myWeek: myWeek,
-        myGroup: myGroup,
-        others: others,
-        hourHeaders: hourHeaders
+        myWeek,
+        myGroup,
+        others,
+        hourHeaders
       });
-      
       setError(null);
     } catch (err) {
-      const errorMsg = err.response?.data?.error || 'Error loading data';
-      setError(errorMsg);
-      console.error('Error loading agent data:', err);
+      setError(err.response?.data?.error || 'Failed to load schedule');
+      console.error('Agent view error:', err);
     } finally {
       setLoading(false);
     }
@@ -89,22 +79,18 @@ function AgentView() {
 
   const handleSearchChange = (e) => {
     setSearchQuery(e.target.value);
-    // Filter locally, don't reload
   };
 
-  // Filter agents locally based on search query
   const filterAgents = (agents) => {
     if (!searchQuery.trim()) return agents;
     const query = searchQuery.toLowerCase();
-    return agents.filter(agent => 
-      agent.name.toLowerCase().includes(query)
-    );
+    return agents.filter(agent => agent.name.toLowerCase().includes(query));
   };
 
   if (loading) {
     return (
       <div className="loading-container">
-        <div className="loading">Cargando mi planning...</div>
+        <div className="loading">Loading my schedule...</div>
       </div>
     );
   }
@@ -113,7 +99,7 @@ function AgentView() {
     return (
       <div className="error-container">
         <div className="error-message">{error}</div>
-        <button onClick={loadData} className="btn-primary">Reintentar</button>
+        <button onClick={loadData} className="btn-primary">Retry</button>
       </div>
     );
   }
@@ -121,29 +107,26 @@ function AgentView() {
   return (
     <div className="agent-view">
       <Header user={user} onLogout={logout} />
-      
+
       <div className="container">
         <div className="view-header">
-          <h1>Mi Planning</h1>
+          <h1>My Schedule</h1>
           <div className="header-actions">
             <input
               type="text"
-              placeholder="Buscar agente..."
+              placeholder="Search agent..."
               value={searchQuery}
               onChange={handleSearchChange}
               className="search-input"
             />
-            <button onClick={loadData} className="btn-secondary">
-              Actualizar
-            </button>
+            <button onClick={loadData} className="btn-secondary">Refresh</button>
           </div>
         </div>
 
         {data && (
           <>
-            {/* Mi Planning */}
             <section className="planning-section">
-              <h2 className="section-title">📅 Mi Planning</h2>
+              <h2 className="section-title">My Week</h2>
               <PlanningGrid
                 data={{
                   agents: [data.myWeek],
@@ -153,11 +136,10 @@ function AgentView() {
               />
             </section>
 
-            {/* Mi Grupo - Solo visible si hay datos */}
             {data.myGroup && data.myGroup.length > 0 && (
               <section className="planning-section">
                 <h2 className="section-title">
-                  👥 Mi Grupo {mySite && `(${mySite})`}
+                  Team {mySite && `(${mySite})`}
                 </h2>
                 <PlanningGrid
                   data={{
@@ -169,7 +151,6 @@ function AgentView() {
               </section>
             )}
 
-            {/* Otros Agentes - Solo visible si hay datos */}
             {data.others && data.others.length > 0 && (
               <section className="planning-section">
                 <button
@@ -177,7 +158,7 @@ function AgentView() {
                   onClick={() => setShowOthers(!showOthers)}
                 >
                   <h2 className="section-title">
-                    {showOthers ? '▼' : '▶'} Otros Agentes ({filterAgents(data.others).length})
+                    {showOthers ? '▼' : '▶'} Other Agents ({filterAgents(data.others).length})
                   </h2>
                 </button>
                 {showOthers && (

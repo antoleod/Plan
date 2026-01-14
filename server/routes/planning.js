@@ -3,6 +3,7 @@ const router = express.Router();
 const path = require('path');
 const LocalExcelAdapter = require('../adapters/LocalExcelAdapter');
 const PlanningService = require('../services/PlanningService');
+const planningController = require('../controllers/planningController');
 const { logChange } = require('../utils/audit');
 const { authenticate, requireRole } = require('../middleware/auth');
 
@@ -136,5 +137,9 @@ router.post('/agents', authenticate, requireRole('MANAGER'), async (req, res) =>
     res.status(400).json({ error: error.message });
   }
 });
+
+router.get('/daily', authenticate, requireRole('MANAGER'), planningController.getDailyPlan);
+router.post('/batch-assign', authenticate, requireRole('MANAGER'), planningController.batchAssign);
+router.post('/move', authenticate, requireRole('MANAGER'), planningController.moveAssignment);
 
 module.exports = router;

@@ -64,7 +64,7 @@ function PlanningGrid({ data, onCellClick, editable = false }) {
     return null;
   };
 
-  const dayNames = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+  const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
   return (
     <div className="planning-grid-container">
@@ -72,7 +72,7 @@ function PlanningGrid({ data, onCellClick, editable = false }) {
         <table className="planning-grid">
           <thead>
             <tr>
-              <th className="sticky-col">Agente</th>
+              <th className="sticky-col">Agent</th>
               {dayNames.map((day, idx) => (
                 <th key={idx} className="day-header">
                   {day}
@@ -98,7 +98,7 @@ function PlanningGrid({ data, onCellClick, editable = false }) {
                       className={`day-cell ${editable ? 'editable' : ''}`}
                       onClick={() => editable && onCellClick && onCellClick(agent, dayIdx)}
                       style={cellStyle}
-                      title={segmentsText || 'Sin horario'}
+                      title={segmentsText || 'No shift assigned'}
                     >
                       <div className="cell-content">
                         {segmentsText && (

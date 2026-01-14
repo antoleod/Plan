@@ -10,6 +10,12 @@ Web app (PWA) para gestión de planning/timesheet operativo, donde el archivo Ex
 - ✅ **Roles**: Manager (edición) y Agent (solo lectura)
 - ✅ **PWA**: Funciona en desktop y móvil, instalable
 - ✅ **Arquitectura extensible**: Preparado para Microsoft Graph API (SharePoint/OneDrive)
+- 🚀 **Manager Copilot**: Dashboard con insights de cobertura en tiempo real
+- 🖱️ **Drag & Drop Planning**: Reasignación visual con validación de reglas
+- 🛡️ **Audit Log**: Registro inmutable de cambios (JSONL) independiente del Excel
+- ⚡ **Batch Assign**: Asignación masiva de turnos y sitios
+- 📅 **Pre-planning**: Generación automática de meses futuros (Copy Month)
+- 📊 **Reportes**: Exportación a CSV de actividad diaria y logs de auditoría
 
 ## 🏗️ Arquitectura
 
@@ -17,7 +23,7 @@ Web app (PWA) para gestión de planning/timesheet operativo, donde el archivo Ex
 ├── server/                 # Backend Node.js
 │   ├── adapters/          # Excel adapters (Local, Graph)
 │   ├── services/          # Lógica de negocio
-│   ├── routes/            # API endpoints
+│   ├── routes/            # API endpoints (planning, insights, audit, reports)
 │   └── config/            # Configuración de mapping
 ├── client/                # Frontend React
 │   └── src/
@@ -141,21 +147,13 @@ El archivo `server/config/mapping.config.json` define cómo mapear el Excel:
 
 **⚠️ IMPORTANTE**: Ajusta estos valores según la estructura real de tu Excel.
 
-## 🔒 Reglas de Negocio
+## 🧠 Motor de Reglas (Rule Engine)
 
-### Ventana de Tiempo
-- **Horario válido**: 08:00 - 20:00
-- **Jornada estándar**: 8h trabajo + 1h pausa = 9h presencia
+El sistema utiliza un `RuleEngine` centralizado para validar cada movimiento en el planning.
+Las reglas se configuran en `server/config/rules.config.json`.
 
-### Pausas por Defecto
-- 12:00 - 13:00
-- 13:00 - 14:00
-
-### Plantillas
-- 08:00 - 17:00
-- 08:30 - 17:30
-- 09:00 - 18:00
-- 09:30 - 18:30
+Para más detalles sobre la lógica de cobertura, pausas y rotación, consulta el archivo:
+📄 RULES.md
 
 ## 🎨 Colores y Estilos
 
