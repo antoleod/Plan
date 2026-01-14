@@ -12,7 +12,8 @@
     "test": "jest",
     "test:excel": "node tests/excel-safety.test.js",
     "test:integration": "node tests/integration.test.js",
-    "test:all": "npm run test:excel && npm run test:integration"
+    "test:range": "node tests/agent-range.test.js",
+    "test:all": "npm run test:excel && npm run test:integration && npm run test:range"
   },
   "keywords": ["planning", "timesheet", "excel"],
   "author": "",

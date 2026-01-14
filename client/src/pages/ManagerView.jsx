@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
 import PlanningGrid from '../components/PlanningGrid';
 import EditDayModal from '../components/EditDayModal';
+import AddAgentModal from '../components/AddAgentModal';
 import Header from '../components/Header';
 import './ManagerView.css';
 
@@ -12,7 +13,9 @@ function ManagerView() {
   const [loading, setLoading] = useState(true);
   const [selectedCell, setSelectedCell] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [showAddAgentModal, setShowAddAgentModal] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [addingAgent, setAddingAgent] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -58,6 +61,7 @@ function ManagerView() {
   const handleSave = async (updateData) => {
     try {
       setSaving(true);
+      setError(null);
       await api.put(
         `/planning/agent/${selectedCell.agent.name}/day/${selectedCell.dayIndex}`,
         updateData
@@ -68,9 +72,36 @@ function ManagerView() {
       setShowModal(false);
       setSelectedCell(null);
     } catch (err) {
-      setError(err.response?.data?.error || 'Error saving');
+      const errorMsg = err.response?.data?.error || 'Error saving';
+      setError(errorMsg);
+      console.error('Save error:', err);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleAddAgent = async (agentData) => {
+    try {
+      setAddingAgent(true);
+      const response = await api.post('/planning/agents', agentData);
+      
+      // Add agent to local state immediately (optimistic update)
+      if (data && response.data.agent) {
+        setData({
+          ...data,
+          agents: [...data.agents, response.data.agent]
+        });
+      }
+      
+      // Reload to get full data
+      await loadData();
+      setShowAddAgentModal(false);
+      setError(null);
+    } catch (err) {
+      setError(err.response?.data?.error || 'Error al añadir agente');
+      throw err;
+    } finally {
+      setAddingAgent(false);
     }
   };
 
@@ -116,6 +147,13 @@ function ManagerView() {
         <div className="view-header">
           <h1>Planning Manager</h1>
           <div className="header-actions">
+            <button 
+              onClick={() => setShowAddAgentModal(true)} 
+              className="btn-add-agent"
+              title="Añadir nuevo agente"
+            >
+              ➕ Añadir Agente
+            </button>
             <button onClick={loadData} className="btn-secondary">
               Recargar
             </button>
@@ -145,6 +183,14 @@ function ManagerView() {
               setSelectedCell(null);
             }}
             saving={saving}
+          />
+        )}
+
+        {showAddAgentModal && (
+          <AddAgentModal
+            onSave={handleAddAgent}
+            onClose={() => setShowAddAgentModal(false)}
+            saving={addingAgent}
           />
         )}
       </div>

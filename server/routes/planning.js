@@ -22,7 +22,7 @@ async function getService() {
   return planningService;
 }
 
-// Get manager view (all agents)
+// Get manager view (all agents) - Only MANAGER role
 router.get('/manager', authenticate, requireRole('MANAGER'), async (req, res) => {
   try {
     const service = await getService();
@@ -79,13 +79,25 @@ router.put('/agent/:agentName/day/:dayIndex', authenticate, requireRole('MANAGER
   }
 });
 
-// Get all agents
+// Get all agents (both MANAGER and AGENT can see this, but AGENT only sees their group)
 router.get('/agents', authenticate, async (req, res) => {
   try {
     const service = await getService();
     const mappingService = service.mappingService;
     const agents = await mappingService.getAllAgents();
     res.json(agents);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get agents view for grouping (read-only, available to AGENT and MANAGER)
+// Returns full week data but agents can only view, not edit
+router.get('/agents/view', authenticate, async (req, res) => {
+  try {
+    const service = await getService();
+    const view = await service.getManagerView();
+    res.json(view);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -100,6 +112,28 @@ router.get('/palette', authenticate, async (req, res) => {
     res.json(palette);
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+});
+
+// Add agent (manager only) - inserts into first empty row within 57..98 and returns the agent
+router.post('/agents', authenticate, requireRole('MANAGER'), async (req, res) => {
+  try {
+    const service = await getService();
+    const { fullName } = req.body || {};
+
+    const created = await service.addAgent({ fullName });
+
+    // Auto-save
+    await excelAdapter.saveExcel();
+
+    // Audit
+    logChange(req.user || { username: 'unknown', id: 'unknown' }, 'ADD_AGENT', {
+      agent: created
+    });
+
+    res.json({ success: true, agent: created });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
   }
 });
 

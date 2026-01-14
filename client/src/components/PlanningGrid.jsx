@@ -33,12 +33,35 @@ function PlanningGrid({ data, onCellClick, editable = false }) {
     return {};
   };
 
-  const getCellValue = (cell) => {
+  const getCellValue = (day) => {
+    // Use daySummary or summary if available (new format with segments)
+    const summary = day.daySummary || day.summary;
+    if (summary?.segmentsText) {
+      return summary.segmentsText;
+    }
+    // Fallback to old format
+    const cell = day.cells?.[0] || {};
     if (cell.value === null || cell.value === undefined) return '';
     if (typeof cell.value === 'number') {
       return cell.value === 0.5 ? '0.5' : cell.value.toString();
     }
     return cell.value.toString();
+  };
+
+  const getCellSite = (day) => {
+    const summary = day.daySummary || day.summary;
+    if (summary?.site) {
+      return summary.site;
+    }
+    return null;
+  };
+
+  const getCellStatus = (day) => {
+    const summary = day.daySummary || day.summary;
+    if (summary?.status) {
+      return summary.status;
+    }
+    return null;
   };
 
   const dayNames = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
@@ -61,18 +84,38 @@ function PlanningGrid({ data, onCellClick, editable = false }) {
             {data.agents.map((agent, agentIdx) => (
               <tr key={agentIdx}>
                 <td className="sticky-col agent-name">{agent.name}</td>
-                {agent.week.map((day, dayIdx) => (
-                  <td
-                    key={dayIdx}
-                    className={`day-cell ${editable ? 'editable' : ''}`}
-                    onClick={() => editable && onCellClick && onCellClick(agent, dayIdx)}
-                    style={getCellStyle(day.cells[0] || {})}
-                  >
-                    <div className="cell-content">
-                      {getCellValue(day.cells[0] || {})}
-                    </div>
-                  </td>
-                ))}
+                {agent.week.map((day, dayIdx) => {
+                  const segmentsText = getCellValue(day);
+                  const site = getCellSite(day);
+                  const status = getCellStatus(day);
+                  const summary = day.daySummary || day.summary;
+                  const firstCell = day.cells?.[0] || {};
+                  const cellStyle = getCellStyle(summary?.style || firstCell);
+                  
+                  return (
+                    <td
+                      key={dayIdx}
+                      className={`day-cell ${editable ? 'editable' : ''}`}
+                      onClick={() => editable && onCellClick && onCellClick(agent, dayIdx)}
+                      style={cellStyle}
+                      title={segmentsText || 'Sin horario'}
+                    >
+                      <div className="cell-content">
+                        {segmentsText && (
+                          <div className="cell-segments">{segmentsText}</div>
+                        )}
+                        {(site || status) && (
+                          <div className="cell-badges">
+                            {site && <span className="badge badge-site">{site}</span>}
+                            {status && status !== 'Present' && (
+                              <span className="badge badge-status">{status}</span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                  );
+                })}
               </tr>
             ))}
           </tbody>

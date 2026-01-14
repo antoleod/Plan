@@ -2,9 +2,11 @@
   "sheet": "Planning",
   "agentNameColumn": "B",
   "agentStartRow": 57,
+  "agentEndRow": 98,
   "hourHeaderRow": 56,
   "dayStartColumn": "PB",
   "dayEndColumn": "PY",
+  "slotMinutes": 30,
   "palette": {
     "sites": {
       "range": "K2:K6",

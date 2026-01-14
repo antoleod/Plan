@@ -45,12 +45,12 @@ class ExcelMappingService {
    * Find agent row by name
    */
   async findAgentRow(agentName) {
-    const sheet = this.adapter.getSheet(this.config.sheet);
     const nameCol = this.config.agentNameColumn;
     const startRow = this.config.agentStartRow;
+    const endRow = this.config.agentEndRow ?? (startRow + 100);
     
-    // Search down from start row (reasonable limit: 100 rows)
-    for (let row = startRow; row < startRow + 100; row++) {
+    // Search only within configured range (MVP safety)
+    for (let row = startRow; row <= endRow; row++) {
       const cellAddress = this.getCellAddress(row, nameCol);
       const cell = await this.adapter.readCell(this.config.sheet, cellAddress);
       
@@ -108,19 +108,22 @@ class ExcelMappingService {
    * Get all agents
    */
   async getAllAgents() {
-    const sheet = this.adapter.getSheet(this.config.sheet);
     const nameCol = this.config.agentNameColumn;
     const startRow = this.config.agentStartRow;
+    const endRow = this.config.agentEndRow ?? (startRow + 100);
     
     const agents = [];
     
-    for (let row = startRow; row < startRow + 100; row++) {
+    // HARD LIMIT: only rows 57..98 (or configured) are valid agents for MVP
+    for (let row = startRow; row <= endRow; row++) {
       const cellAddress = this.getCellAddress(row, nameCol);
       const cell = await this.adapter.readCell(this.config.sheet, cellAddress);
       
       if (cell.value && cell.value.toString().trim()) {
+        const name = cell.value.toString().trim();
         agents.push({
-          name: cell.value.toString().trim(),
+          id: `row_${row}`, // stable internal id even when names repeat
+          name,
           row: row,
           address: cellAddress
         });
@@ -128,6 +131,23 @@ class ExcelMappingService {
     }
     
     return agents;
+  }
+
+  /**
+   * Find first empty agent row within configured range
+   */
+  async findFirstEmptyAgentRow() {
+    const nameCol = this.config.agentNameColumn;
+    const startRow = this.config.agentStartRow;
+    const endRow = this.config.agentEndRow ?? (startRow + 100);
+
+    for (let row = startRow; row <= endRow; row++) {
+      const cellAddress = this.getCellAddress(row, nameCol);
+      const cell = await this.adapter.readCell(this.config.sheet, cellAddress);
+      const v = (cell.value ?? '').toString().trim();
+      if (!v) return row;
+    }
+    return null;
   }
 
   /**
