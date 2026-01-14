@@ -1,87 +1,24 @@
 const express = require('express');
 const router = express.Router();
 const path = require('path');
-const LocalExcelAdapter = require('../adapters/LocalExcelAdapter');
-const { authenticate, requireRole } = require('../middleware/auth');
+const fs = require('fs');
 
-// Initialize adapter with Excel file path
-const EXCEL_FILE_PATH = path.join(__dirname, '../../Planning_2026-01_FULLY_EDITABLE.xlsm');
-let excelAdapter = null;
+const EXCEL_FILE_PATH = path.join(
+  process.cwd(),
+  process.env.EXCEL_FILE_NAME || 'Planning_2026-01_FULLY_EDITABLE.xlsm'
+);
 
-// Initialize adapter on first request
-async function getAdapter() {
-  if (!excelAdapter) {
-    excelAdapter = new LocalExcelAdapter(EXCEL_FILE_PATH);
-    await excelAdapter.loadExcel();
-  }
-  return excelAdapter;
-}
-
-// Check for file changes
-router.get('/status', authenticate, async (req, res) => {
-  try {
-    const adapter = await getAdapter();
-    const hasChanges = await adapter.checkForChanges();
-    const lastModified = adapter.getLastModified();
-    
-    res.json({
-      hasChanges,
-      lastModified: lastModified ? lastModified.toISOString() : null
-    });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Reload Excel file
-router.post('/reload', authenticate, requireRole('MANAGER'), async (req, res) => {
-  try {
-    excelAdapter = new LocalExcelAdapter(EXCEL_FILE_PATH);
-    await excelAdapter.loadExcel();
-    res.json({ success: true, message: 'Excel reloaded' });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Save Excel file
-router.post('/save', authenticate, requireRole('MANAGER'), async (req, res) => {
-  try {
-    const adapter = await getAdapter();
-    
-    // Check for conflicts
-    const hasChanges = await adapter.checkForChanges();
-    if (hasChanges && !req.body.force) {
-      return res.status(409).json({
-        error: 'File has been modified. Reload first or use force=true',
-        hasChanges: true
-      });
-    }
-    
-    const result = await adapter.saveExcel();
-    res.json({
-      success: true,
-      message: 'Excel saved successfully',
-      backupPath: result.backupPath
-    });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Download Excel file
-router.get('/download', authenticate, async (req, res) => {
-  try {
-    const adapter = await getAdapter();
-    await adapter.saveExcel(); // Ensure latest changes are saved
-    
-    res.download(EXCEL_FILE_PATH, 'Planning_2026-01_FULLY_EDITABLE.xlsm', (err) => {
+// GET /api/excel/download - Allows downloading the Excel file
+router.get('/download', (req, res) => {
+  if (fs.existsSync(EXCEL_FILE_PATH)) {
+    res.download(EXCEL_FILE_PATH, (err) => {
       if (err) {
-        res.status(500).json({ error: 'Error downloading file' });
+        console.error("Error downloading the file:", err);
+        res.status(500).send("Could not download the file.");
       }
     });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+  } else {
+    res.status(404).send("File not found.");
   }
 });
 

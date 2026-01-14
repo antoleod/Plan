@@ -1,72 +1,53 @@
-import { createContext, useContext, useState, useEffect } from 'react';
-import api from '../services/api';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const AuthContext = createContext(null);
 
-export function AuthProvider({ children }) {
+export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [token, setToken] = useState(localStorage.getItem('token'));
 
   useEffect(() => {
-    // Check for existing session
-    const token = localStorage.getItem('token');
     if (token) {
-      verifyToken(token);
-    } else {
-      setLoading(false);
+      // En una aplicación real, se verificaría el token con el backend.
+      // Aquí, decodificamos un objeto de usuario simulado desde localStorage.
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));
+      }
     }
-  }, []);
-
-  const verifyToken = async (token) => {
-    try {
-      const response = await api.get('/auth/verify', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setUser(response.data.user);
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
-    } catch (error) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      setUser(null);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [token]);
 
   const login = async (username, password) => {
-    try {
-      const response = await api.post('/auth/login', { username, password });
-      const { token, user } = response.data;
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(user));
-      setUser(user);
-      return { success: true };
-    } catch (error) {
-      return {
-        success: false,
-        error: error.response?.data?.error || 'Login failed'
+    // Simulación de llamada a la API
+    if ((username === 'manager' && password === 'manager123') || (username === 'juan' && password === 'juan123')) {
+      const userData = {
+        username,
+        name: username, // Para la búsqueda en la grilla de planificación del agente
+        role: username === 'manager' ? 'manager' : 'agent',
       };
+      const mockToken = `mock-token-for-${username}`;
+      
+      localStorage.setItem('user', JSON.stringify(userData));
+      localStorage.setItem('token', mockToken);
+      setUser(userData);
+      setToken(mockToken);
+      return true;
     }
+    throw new Error('Invalid credentials');
   };
 
   const logout = () => {
-    localStorage.removeItem('token');
     localStorage.removeItem('user');
+    localStorage.removeItem('token');
     setUser(null);
+    setToken(null);
   };
 
-  return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
-      {children}
-    </AuthContext.Provider>
-  );
-}
+  const value = { user, token, login, logout };
 
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within AuthProvider');
-  }
-  return context;
-}
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+};
+
+export const useAuth = () => {
+  return useContext(AuthContext);
+};

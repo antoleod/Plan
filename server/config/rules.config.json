@@ -1,28 +1,16 @@
 {
   "coverage": {
-    "sites": {
-      "WD Spinelli": { "min": 2, "target": 4 },
-      "WD Kohl": { "min": 1, "target": 2 },
-      "WD Martens": { "min": 1, "target": 2 },
-      "WD LUX/STR": { "min": 1, "target": 2 },
-      "Serv. phone": { "min": 1, "target": 1 }
+    "WD Spinelli": {
+      "min": 2,
+      "target": 4
     },
-    "timeWindows": {
-      "morning": { "start": "08:00", "end": "12:00" },
-      "lunch": { "start": "12:00", "end": "14:00" },
-      "afternoon": { "start": "14:00", "end": "18:00" }
+    "WD Kohl": {
+      "min": 2,
+      "target": 3
+    },
+    "Serv. phone": {
+      "min": 1,
+      "target": 1
     }
-  },
-  "breaks": {
-    "minStaffOnSite": 1,
-    "maxSimultaneousBreaks": 3
-  },
-  "rotation": {
-    "lookbackWeeks": 2,
-    "avoidConsecutiveSites": true
-  },
-  "fixedAgents": [],
-  "tardiness": {
-    "alertThreshold": 3
   }
 }
